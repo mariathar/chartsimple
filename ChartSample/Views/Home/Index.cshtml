@@ -1,0 +1,94 @@
+﻿@{
+  Layout = null;
+}
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+    <title>Chat Room</title>
+
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.0.min.js"></script>
+    <script src="~/Scripts/angular.js"></script>
+    <script src="~/Scripts/service.hub.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script src="~/Scripts/bootstrap.js"></script>
+    <script src="~/Scripts/app/chat-controller.js"></script>
+    <script src="~/Scripts/app/messageHub.js"></script>
+    <script src="~/Scripts/app/privateService.js"></script>
+    <script src="~/Scripts/app/index.js"></script>
+    @Styles.Render("~/Content/css")
+</head>
+<body>
+    <div class="container-fluid">
+        <main class="container" ng-controller="ChatController as vm">
+            <div class="header"><h1>Чат комната</h1></div>
+            <div ng-hide="vm.login" class="panel-wrapper">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <h4>Ваш логин</h4>
+                        <div class="form-group">
+                            <input ng-model="vm.name" class="form-control" maxlength="10">
+                        </div>
+                        <h5>{{vm.connectedFail}}</h5>
+                        <button class="btn btn-success btn-block" ng-click="vm.connect()">Хочу общаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-wrapper" ng-show="vm.login">
+                <form class="panel panel-default" name="common" ng-submit="vm.sendMessage()">
+                    <div class="panel-heading usermain-header">
+                        <div class="form-group">
+                            <lebel class="username">{{vm.name}}</lebel>
+                            <div class="dropdown pull-right">
+                                <button class="btn btn-default dropdown-toggle" ng-show="vm.users.length > 0" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                    <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                    <li ng-repeat="user in vm.users">
+                                        <a href="#" ng-click="vm.loadPrivatePanel(user)">
+                                            {{user.name}}
+                                            <span ng-show="user.dialog" class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body form-group">
+                        <div class="form-group">
+                            <input type="text" class="form-control" ng-model="vm.message" placeholder="..." />
+                        </div>
+                        <div class="message-wrapper">
+                            <div ng-repeat="message in vm.messages" ng-class="{usermassage: message.from==vm.name, userFromMessage: message.from!=vm.name}">
+                                <span ng-hide="message.from==vm.name"><strong>{{message.from}}</strong>: {{ message.txt }}</span>
+                                <span ng-show="message.from==vm.name">{{ message.txt }}</span>
+                            </div>
+                            <div id="bottom-message"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="panel-wrapper">
+                <form class="panel panel-default" name="private" ng-show="vm.userPrivate" ng-submit="vm.sendPrivateMessage()">
+                    <div class="panel-heading">
+                        <i class="glyphicon glyphicon-user"></i> {{vm.userPrivate}}
+                        <span class="glyphicon glyphicon-remove pull-right" aria-hidden="true" ng-click="vm.reloadPrivate()"></span>
+                    </div>
+                    <div class="panel-body form-group">
+                        <input type="text" class="form-control" ng-model="vm.messagePrivate" placeholder="..." />
+                    </div>
+                    <div class="message-wrapper">
+                        <div ng-repeat="mess in vm.messagesPrivate" ng-class="{usermassage: mess.from == vm.name, userFromMessage: mess.from != vm.name}">
+                            <span ng-hide="mess.from == vm.name"><strong>{{mess.from}}</strong>: {{ mess.txt }}</span>
+                            <span ng-show="mess.from == vm.name">{{ mess.txt }}</span>
+                        </div>
+                        <div id="bottom-message"></div>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,175 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+    <title></title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.0.min.js"></script>
+    <script src="~/Scripts/service.hub.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/Site.css" rel="stylesheet" />
+    <script>
+        (function (angular) {
+            'use strict';
+
+
+            MessageHub.$inject = ['HubProxy'];
+            function MessageHub(Hub) {
+                var messageHub = new Hub('messageHub', { connectionPath: '/signalr', loggingEnabled: true });
+                messageHub.start();
+                return messageHub;
+            }
+
+            angular.module('app', ['services.hub']).factory('MessageHub', MessageHub);
+
+            MessageController.$inject = [ '$location', '$anchorScroll', '$timeout', 'MessageHub'];
+            function MessageController($location, $anchorScroll, $timeout, MessageHub) {
+
+                var self = this;
+                this.name = "";
+                this.messages = [];
+                this.connect = connect;
+                this.message = '';
+                this.users = [];
+                this.sendPrivateMessage = sendPrivateMessage;
+                this.messagePrivate = "";
+                this.messagesPrivate = [];
+                this.userPrivate = '';
+                this.reloadPrivate = reloadPrivate;
+                this.connectedFail = '';
+
+                this.sendMessage = function () {
+                    MessageHub.invoke('sendMessage', this.name, this.message);
+                    self.message = '';
+                };
+
+                function connect() {
+                    MessageHub.invoke('connect', this.name);
+                }
+
+                function addMessage(message) {
+                    self.messages.push(message);
+                    $location.hash('bottom-message');
+                    $anchorScroll();                    
+                }
+
+                function sendPrivateMessage() {
+                    MessageHub.invoke('sendprivatemessage', this.userPrivate, this.messagePrivate);
+                }
+
+                function reloadPrivate() {
+                    self.userPrivate = '';
+                    self.messagePrivate = '';
+                }
+
+                MessageHub.on('addPrivateMessage', function (user, message) {
+                    self.messagesPrivate.push({ from: user, txt: message });
+                });
+
+                MessageHub.on('addMessage', function (user, message) {
+                    addMessage({ from: user, txt: message });
+                });
+
+                MessageHub.on('onconnected', function () {
+                    self.login = !self.login;
+                    MessageHub.invoke('getusers');
+                });
+
+                //получение списка всех пользователей онлайн
+                MessageHub.on('sendUsers', function (users) {
+                    self.users = users;
+                });
+
+                //при подключении нового юзера добавляется в список
+                MessageHub.on('onNewUserConnected', function (user) {
+                    self.users.push(user);
+                });
+
+                MessageHub.on('onConnectedFail', function () {
+                    self.connectedFail = 'Введите другой логин!';
+                });
+
+                MessageHub.on('onUserDisconnected', function (name) {
+                    //удаление юзера из списка
+                    for (var elem in self.users) {
+                        if (elem == self.users[i])
+                            self.users.splice(1, i);
+                    }
+                });
+            }
+            angular.module('app').factory('MessageHub', MessageHub);
+            angular.module('app').controller("MessageController", MessageController)
+        })(window.angular);
+    </script>
+
+</head>
+<body>
+    <div class="container-fluid">
+        <main class="container" ng-controller="MessageController as msgCtrl">
+            <div class="header"><h1>Чат комната</h1></div>
+            <div ng-hide="msgCtrl.login" class="panel-wrapper">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <h4>Как вас зовут?</h4>
+                        <div class="form-group">
+                            <input ng-model="msgCtrl.name" class="form-control">
+                        </div>
+                        <label>{{msgCtrl.connectedFail}}</label>
+                        <button class="btn btn-success btn-block" ng-click="msgCtrl.connect()">Хочу общаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-wrapper" ng-show="msgCtrl.login">
+                {{msgCtrl.name}}
+                <form class="panel panel-default" name="common" ng-submit="msgCtrl.sendMessage()">
+                    <div>
+                        <select ng-model="msgCtrl.userPrivate" class="form-control" ng-options="user for user in msgCtrl.users">
+                            <option value="">Select A User</option>
+                        </select>
+                    </div>
+                    <div class="panel-heading">
+                        <i class="glyphicon glyphicon-flash text-success" ng-class="{ 'text-warning': appCtrl.connectionStatus.isReconnecting(), 'text-danger': appCtrl.connectionStatus.isDisconnected() }"></i>
+                        <span class="pull-right"><span ng-bind="appCtrl.usersOnline">?</span></span>
+                    </div>
+                    <div class="panel-body form-group">
+                        <div class="form-group">
+                            <input type="text" class="form-control" ng-model="msgCtrl.message" placeholder="..." />
+                        </div>
+                        <div class="message-wrapper">
+                            <div ng-repeat="message in msgCtrl.messages" ng-class="{usermassage: message.from==msgCtrl.name, userFromMessage: message.from!=msgCtrl.name}">
+                                <span ng-hide="message.from==msgCtrl.name"><strong>{{message.from}}</strong>: {{ message.txt }}</span>
+                                <span ng-show="message.from==msgCtrl.name">{{ message.txt }}</span>
+                            </div>
+                            <div id="bottom-message"></div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="panel-wrapper">
+                <label></label>
+                <form class="panel panel-default" name="private" ng-show="msgCtrl.userPrivate" ng-submit="msgCtrl.sendPrivateMessage()">
+                    <div class="panel-heading">
+                        <i class="glyphicon glyphicon-user"></i> {{msgCtrl.userPrivate}}
+                        <span class="glyphicon glyphicon-remove pull-right" aria-hidden="true" ng-click="msgCtrl.reloadPrivate()"></span>
+                    </div>
+                    <div class="panel-body form-group">
+                        <input type="text" class="form-control" ng-model="msgCtrl.messagePrivate" placeholder="..." />
+                    </div>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="message in msgCtrl.messagesPrivate">
+                            <strong>{{message.from}}</strong>: {{ message.txt }}
+                        </li>
+                    </ul>
+                </form>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

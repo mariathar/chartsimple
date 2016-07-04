@@ -1,0 +1,46 @@
+﻿body {
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    /*max-width: 280px;*/
+}
+
+.container .header{ text-align: center; padding: 20px 0;}
+.container .panel-wrapper {width: 400px; margin:0 auto;}
+.usermassage, .userFromMessage{
+    display: block;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+.usermassage {
+    text-align: right;
+    margin-left: 30px;
+    background: rgba(189, 189, 239, 0.24);
+}
+.userFromMessage {   
+    text-align: left;
+    background: rgba(234, 190, 236, 0.41);
+    margin-right: 30px;
+
+}
+.message-wrapper {max-height: 300px; overflow-y:scroll}
+
